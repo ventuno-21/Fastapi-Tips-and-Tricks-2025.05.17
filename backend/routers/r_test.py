@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Path
+from fastapi import APIRouter, Body, Path, Query
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -81,6 +81,15 @@ async def single_book(book_id: int = Path(gt=0)):
     for b in books:
         if b.id == book_id:
             return b
+
+
+@router.get("/books/")
+async def read_books_by_rating(rating: int = Query(gt=0, lt=6)):
+    rated_books = []
+    for b in books:
+        if b.rating == rating:
+            rated_books.append(b)
+    return rated_books
 
 
 @router.post("/create-book")
