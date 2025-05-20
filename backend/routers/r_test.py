@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Path, Query
+from fastapi import APIRouter, Body, Path, Query, HTTPException
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -81,6 +81,7 @@ async def single_book(book_id: int = Path(gt=0)):
     for b in books:
         if b.id == book_id:
             return b
+    raise HTTPException(status_code=404, detail="Not Found lady")
 
 
 @router.get("/books/")
