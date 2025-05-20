@@ -1,1 +1,33 @@
-uvicorn main:app --reload
+=============================
+How to run this project:
+
+    uvicorn main:app --reload
+=========================
+Annotated
+The FastAPI documentation recommends the use of Annotated for 
+defining route dependencies and parameters, rather than using 
+Depends directly with a default value.
+This approach is also suggested for various route parameters,
+including Body and Cookie, as it helps ensure consistency and clarity in defining dependencies and parameters.
+
+
+Example
+    from fastapi import Depends, FastAPI
+    app = FastAPI()
+    async def common_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+    return {"q": q, "skip": skip, "limit": limit}
+    @app.get("/items/")
+    async def read_items(commons: dict = Depends(common_parameters)):
+    return commons
+
+Use instead:
+    from typing import Annotated
+    from fastapi import Depends, FastAPI
+    app = FastAPI()
+    async def common_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+    return {"q": q, "skip": skip, "limit": limit}
+    @app.get("/items/")
+    async def read_items(commons: Annotated[dict, Depends(common_parameters)]):
+    return commons
+
+=========================

@@ -1,14 +1,13 @@
 from fastapi import FastAPI, Body
+from db.sync_engine import Base, engine
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel
 from routers.r_users import router as user_router
 from routers.r_test import router as test_router
-
-# from db.aasync_engine import Base, engine
-from db.sync_engine import Base, engine
-from contextlib import asynccontextmanager
+from routers.r_todos import router as todo_router
 from db import models
+from contextlib import asynccontextmanager
 
 # @app.on_event("startup")
 # async def init_tables():
@@ -27,7 +26,10 @@ from db import models
 
 app = FastAPI()
 
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
-app.include_router(user_router, prefix="/users", tags=["user"])
+app.include_router(todo_router, prefix="/todo", tags=["todo"])
+app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(test_router, prefix="/test", tags=["test"])
+
+models.Base.metadata.create_all(engine)
