@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from routers.r_users import router as user_router
 from db.engine import Base, engine
 from contextlib import asynccontextmanager
+from starlette import status
 
 
 router = APIRouter()
@@ -71,12 +72,12 @@ books = [
 items_dict = [{"item_one": "one"}, {"item_two": "two"}, {"item_three": "three"}]
 
 
-@router.get("/books")
+@router.get("/books", status_code=status.HTTP_200_OK)
 async def all_books():
     return books
 
 
-@router.get("/books/{book_id}")
+@router.get("/books/{book_id}", status_code=status.HTTP_200_OK)
 async def single_book(book_id: int = Path(gt=0)):
     for b in books:
         if b.id == book_id:
@@ -84,7 +85,7 @@ async def single_book(book_id: int = Path(gt=0)):
     raise HTTPException(status_code=404, detail="Not Found lady")
 
 
-@router.get("/books/")
+@router.get("/books/", status_code=status.HTTP_200_OK)
 async def read_books_by_rating(rating: int = Query(gt=0, lt=6)):
     rated_books = []
     for b in books:
@@ -93,7 +94,7 @@ async def read_books_by_rating(rating: int = Query(gt=0, lt=6)):
     return rated_books
 
 
-@router.post("/create-book")
+@router.post("/create-book", status_code=status.HTTP_201_CREATED)
 async def create_book(add_book=Body()):
     """
     This endpoint is based on Python class
@@ -104,7 +105,7 @@ async def create_book(add_book=Body()):
     return add_book
 
 
-@router.delete("/books/{book_id}")
+@router.delete("/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: int = Path(gt=0)):
     for i in range(len(books)):
         if books[i].id == book_id:
