@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
 from routers.r_users import router as user_router
-from db.engine import Base, engine
+from db.aasync_engine import Base, engine
 from contextlib import asynccontextmanager
 from starlette import status
 
