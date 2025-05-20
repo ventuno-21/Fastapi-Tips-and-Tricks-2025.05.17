@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Path
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -76,6 +76,13 @@ async def all_books():
     return books
 
 
+@router.get("/books/{book_id}")
+async def single_book(book_id: int = Path(gt=0)):
+    for b in books:
+        if b.id == book_id:
+            return b
+
+
 @router.post("/create-book")
 async def create_book(add_book=Body()):
     """
@@ -85,6 +92,14 @@ async def create_book(add_book=Body()):
     """
     books.append(add_book)
     return add_book
+
+
+@router.delete("/books/{book_id}")
+async def delete_book(book_id: int = Path(gt=0)):
+    for i in range(len(books)):
+        if books[i].id == book_id:
+            books.pop(i)
+            break
 
 
 @router.post("/create-book2")
