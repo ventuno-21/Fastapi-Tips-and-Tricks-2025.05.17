@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Mapped, mapped_column
 
 # from .aasync_engine import Base
-from sqlalchemy import Column, Integer, Boolean, String
+from sqlalchemy import Column, Integer, Boolean, String, ForeignKey
 
 
 # class User(Base):
@@ -16,6 +16,19 @@ from sqlalchemy import Column, Integer, Boolean, String
 #     )
 
 
+class Users(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True)
+    username = Column(String)
+    firstname = Column(String)
+    lastname = Column(String)
+    role = Column(String)
+    hash_password = Column(String)
+    is_active = Column(Boolean, default=False)
+
+
 class Todos(Base):
     __tablename__ = "todos"
 
@@ -24,3 +37,4 @@ class Todos(Base):
     description = Column(String)
     priority = Column(Integer)
     complete = Column(Boolean, default=False)
+    owner_id = Column(Integer, ForeignKey("users.id"))
