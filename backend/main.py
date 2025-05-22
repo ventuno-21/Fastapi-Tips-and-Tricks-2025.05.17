@@ -38,4 +38,6 @@ app.include_router(todo_router, prefix="/todo", tags=["todo"])
 app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(test_router, prefix="/test", tags=["test"])
 
-models.Base.metadata.create_all(engine)
+
+# If you use alembic, you can ignore below line
+# models.Base.metadata.create_all(engine)

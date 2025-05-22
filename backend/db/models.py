@@ -27,6 +27,7 @@ class Users(Base):
     role = Column(String)
     hash_password = Column(String)
     is_active = Column(Boolean, default=False)
+    phone = Column(Integer)
 
 
 class Todos(Base):

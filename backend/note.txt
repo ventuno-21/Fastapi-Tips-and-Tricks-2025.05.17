@@ -64,5 +64,48 @@ CREATE TABLE todos (
 =========================
 Your link to connect postgresql should be like this:
 
-# SQLALCHEMY_DATABASE_URL = "postgresql://<username in postgress datbase>:<password in postgress databse >@<domain name>/<your databse name that you created in postgres>"
+SQLALCHEMY_DATABASE_URL = "postgresql://<username in postgress datbase>:<password in postgress databse >@<domain name>/<your databse name that you created in postgres>"
 SQLALCHEMY_DATABASE_URL = "postgresql://user:password@127.0.0.1/Todo"
+=========================
+How to use ALEMBIC:
+1) Install it
+$ pip install alembic 
+
+2) initialize it:
+$ alembic init <folder that you want revisions to be saved> 
+$ alembic init migrations
+
+
+3) Define proect to Alempic
+===>) inside alembic.ini change the datab of "sqlalchemy.url " to database that you are working with:
+
+===>) if you use sqlite would be sth like this:
+sqlalchemy.url  = "sqlite:///./database.db"
+
+===>) if you use postgresql would be sth like this:
+sqlalchemy.url = "postgresql://user:password@postgresserver/db"
+
+4) Also we should be sure Alembic can find our models, therefore we should use "Base":
+inside env.py change the value of "target_metadata"
+
+$ from model import Base
+$ target_metadata= Base.metadata
+
+5) because we want to use migrations we dont need below line in our main.py, so we remove it:
+
+remove below line in main.py:
+$ models.Base.metadata.create_all(engine)
+
+
+5) then we should do our migrations in terminal:
+
+$ alembic revision --autogenerate -m "<your message>"
+
+6) still oour database is not get informed about any changes in our models,
+we should do below line:
+
+$ alembic upgrade head
+
+7) to revert to last migration:
+$ alembic downgrade -l
+=========================
