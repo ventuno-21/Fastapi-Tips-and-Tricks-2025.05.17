@@ -44,10 +44,12 @@ def authenticate_user(username: str, password: str, db):
     return user
 
 
-def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+def create_access_token(
+    username: str, user_id: int, role: str, expires_delta: timedelta
+):
 
     expires = datetime.now(timezone.utc) + timedelta(minutes=34)
-    encode_items = {"id": user_id, "username": username, "exp": expires}
+    encode_items = {"id": user_id, "username": username, "role": role, "exp": expires}
     return jwt.encode(encode_items, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -68,6 +70,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        role: str = payload.get("role")
         username: str = payload.get("username")
         user_id: int = payload.get("id")
         if username is None or user_id is None:
@@ -76,7 +79,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
                 detail="Could not validate a user",
             )
         else:
-            return {"username": username, "id": user_id}
+            return {"username": username, "id": user_id, "role": role}
     except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -121,7 +124,9 @@ async def login_for_access_token(
             detail="Could not validate a user",
         )
     else:
-        token = create_access_token(user.username, user.id, timedelta(minutes=20))
+        token = create_access_token(
+            user.username, user.id, user.role, timedelta(minutes=20)
+        )
         """
             The response of the token endpoint must be a JSON object.
 
