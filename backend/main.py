@@ -11,6 +11,7 @@ from routers.r_admin import router as admin_router
 from routers.r_users import router as user_router
 from db import models
 from contextlib import asynccontextmanager
+from starlette.staticfiles import StaticFiles
 
 # @app.on_event("startup")
 # async def init_tables():
@@ -30,6 +31,8 @@ from contextlib import asynccontextmanager
 app = FastAPI()
 
 # models.Base.metadata.create_all(bind=engine)
+
+app.mouun("/statuc", StaticFiles(directory="static"), name="static")
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
