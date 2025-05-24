@@ -41,3 +41,8 @@ app.include_router(test_router, prefix="/test", tags=["test"])
 
 # If you use alembic, you can ignore below line
 # models.Base.metadata.create_all(engine)
+
+
+@app.get("/healthy")
+def health_check():
+    return {"status": "HEALTHY"}

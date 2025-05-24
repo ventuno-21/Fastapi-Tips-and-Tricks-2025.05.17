@@ -4,7 +4,7 @@ from typing import Annotated
 from db.sync_engine import get_db
 from db.models import Todos, Users
 from starlette import status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -34,6 +34,7 @@ class CreateUserRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def authenticate_user(username: str, password: str, db):

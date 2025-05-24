@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from sqlalchemy.orm import Session
 from typing import Annotated
 from db.sync_engine import get_db
@@ -6,11 +6,16 @@ from db.models import Todos
 from starlette import status
 from pydantic import BaseModel, Field
 from .r_auth import get_current_user
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
 
 router = APIRouter()
 
 db_dependancy = Annotated[Session, Depends(get_db)]
 user_dependancy = Annotated[dict, Depends(get_current_user)]
+
+templates = Jinja2Templates(directory="templates")
 
 
 class TodoRequest(BaseModel):
@@ -18,6 +23,11 @@ class TodoRequest(BaseModel):
     description: str = Field(min_length=2, max_length=100)
     priority: int = Field(gt=0, lt=6)
     complete: bool
+
+
+@router.get("/test")
+async def test(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
 
 
 @router.get("/")
@@ -47,7 +57,7 @@ async def read_todo(user: user_dependancy, db: db_dependancy, todo_id: int):
         raise HTTPException(status_code=404, detail=f"id no. {todo_id} does not exist")
 
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_todo(
     user: user_dependancy,
     db: db_dependancy,
@@ -62,7 +72,7 @@ async def create_todo(
     return todo
 
 
-@router.put("/{todo_id}", status_code=status.HTTP_200_OK)
+@router.put("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_todo(
     user: user_dependancy,
     db: db_dependancy,
