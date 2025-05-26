@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, Optional
 from db.sync_engine import get_db
 from db.models import Todos, Users
 from starlette import status
+from starlette.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import timedelta, datetime, timezone
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 
@@ -19,6 +22,10 @@ bcrypt_context = CryptContext(schemes=["bcrypt"])
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
 SECRET_KEY = "IUIBUDY*&^*&%DF%D^&CGDHCBDCHKCHYUID^C&D*CYDCDBCMDKKDGCKDGHG"
 ALGORITHM = "HS256"
+templates = Jinja2Templates(directory="templates")
+
+
+# ******************** Authentication API functionalities ********************
 
 
 class CreateUserRequest(BaseModel):
@@ -89,12 +96,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         )
 
 
-@router.get("/")
+@router.get("/api/")
 async def all_users(db: db_dependancy):
     return db.query(Users).all()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/api/", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependancy, create_user_requestt: CreateUserRequest):
     user = Users(
         firstname=create_user_requestt.firstname,
@@ -133,7 +140,7 @@ async def login_for_access_token(
         """
             The response of the token endpoint must be a JSON object.
 
-            It should have a token_type. In our case, as we are using "Bearer" tokens, 
+            It should have a token_type. In our case, as we are using "Bearer" tokens,
             the token type should be "bearer".
 
             And it should have an access_token, with a string containing our access token.
