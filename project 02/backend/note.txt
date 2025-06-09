@@ -152,3 +152,51 @@ How to use scalar?
 how to orginie your imports in VScode:
 press  =>  shift +  alt  +  o
 =========================
+
+======> session.get()
+ Retrieves a single ORM object by its primary key in a simple, direct way.
+Use session.get() when you need to fetch a single record by its
+primary key (e.g., id).
+Single Result: Returns one object or None; no need to call .scalar() or similar.
+
+======> session.execute()
+Executes a SQL query (typically a select statement) and returns a result set, 
+allowing for flexible and complex queries.
+
+Use session.execute() when you need to query based on non-primary 
+key fields (e.g., email, name) or complex conditions.
+Suitable for queries involving filters, joins, ordering, grouping, 
+or multiple results.
+Flexible Queries: Supports select statements with .where(), .join(), .order_by(), etc.
+Result Handling: Returns a Result object, requiring methods like 
+.scalar(), .scalar_one_or_none(), or .scalars().all() to process results.
+
+=========================
+how to connect to redis via windows:
+
+frist in WSL install redis:
+  sudo apy-get install redis-server
+
+then intialize your redis server:
+  sudo service redis-server restart
+
+after that in your project in windows install redis:
+  pip install redis[hiredis]
+
+then in shell you can test that you are connected to redis or not:
+  (venv) PS E:\Imparare\backend> python     
+  Python 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)] on win32
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>> from redis import Redis
+  >>> con = Redis(host='localhost', port=6379, db=0)
+  >>> con.ping()
+  True
+
+  >>> con.set('key','value')
+  True
+  >>> con.get('key')
+  b'value'
+  >>> 
+  
+  >>> con.exists('key')
+  1

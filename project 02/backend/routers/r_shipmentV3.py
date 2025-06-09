@@ -10,7 +10,7 @@ from starlette import status
 from ..db.async_engine_sqlmodel_postgres import SessionDep
 from ..db.sqlmodel_models import Shipment
 from ..operations.o_shipment import ShipmentService
-from ..routers.dependencies import ServiceDep
+from ..routers.dependencies import SellerDep, ServiceDep
 from ..schemas.s_schemas import (
     ShipmentCreate,
     ShipmentRead,
@@ -24,7 +24,7 @@ router = APIRouter()
 ###  a shipment by id
 @router.get("/", response_model=ShipmentRead)
 # async def get_shipment(id: int,  service: ServiceDep):
-async def get_shipment(id: int, service: SessionDep):
+async def get_shipment(id: int, seller: SellerDep, service: SessionDep):
 
     shipment = await ShipmentService(service).get(id)
     # shipment = await service.get(id)
@@ -56,7 +56,9 @@ async def get_shipmentv2(id: int, service: ServiceDep):
 
 ### Create a new shipment with content and weight
 @router.post("/")
-async def submit_shipment(shipment: ShipmentCreate, service: SessionDep) -> Shipment:
+async def submit_shipment(
+    seller: SellerDep, shipment: ShipmentCreate, service: SessionDep
+) -> Shipment:
     """
     why we dont use below sentence and we face an error:
         # return await ShipmentService(service).add(shipment)
@@ -68,7 +70,9 @@ async def submit_shipment(shipment: ShipmentCreate, service: SessionDep) -> Ship
 
 
 @router.post("/v2/")
-async def submit_shipmentv2(shipment: ShipmentCreate, service: ServiceDep) -> Shipment:
+async def submit_shipmentv2(
+    seller: SellerDep, shipment: ShipmentCreate, service: ServiceDep
+) -> Shipment:
     """
     Both functions with name submit_shipment & submit_shipmentv2 has a same result
     with different dependencies

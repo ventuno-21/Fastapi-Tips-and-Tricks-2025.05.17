@@ -1,14 +1,45 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 
 from ..db.async_engine_sqlmodel_postgres import get_session
+from ..db.redis import is_jti_blacklisted
+from ..db.sqlmodel_models import Seller
+from ..operations.o_seller import SellerService
 from ..operations.o_shipment import ShipmentService
-
+from ..utils.token import decode_access_token
 
 # Asynchronous database session dep annotation
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/seller/token")
+
+
+# Access token data dep
+async def get_access_token(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
+    data = decode_access_token(token)
+
+    if data is None or await is_jti_blacklisted(data["jti"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired access token",
+        )
+
+    return data
+
+
+# Logged In Seller
+async def get_current_seller(
+    token_data: Annotated[dict, Depends(get_access_token)],
+    session: SessionDep,
+):
+    return await session.get(Seller, token_data["user"]["id"])
+
+
+SellerDep = Annotated[Seller, Depends(get_current_seller)]
 
 
 # Shipment service dep
@@ -62,4 +93,16 @@ session, streamlining access to shipment-related business logic.
 ServiceDep = Annotated[
     ShipmentService,
     Depends(get_shipment_service),
+]
+
+
+# Seller service dep
+def get_seller_service(session: SessionDep):
+    return SellerService(session)
+
+
+# Seller service dep annotation
+SellerServiceDep = Annotated[
+    SellerService,
+    Depends(get_seller_service),
 ]
