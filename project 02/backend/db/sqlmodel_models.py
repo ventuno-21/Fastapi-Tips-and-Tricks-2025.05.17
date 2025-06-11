@@ -1,7 +1,9 @@
 from datetime import datetime
 from enum import Enum
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship, Column
 from pydantic import EmailStr
+from uuid import uuid4, UUID
+from sqlalchemy.dialects import postgresql
 
 
 class ShipmentStatus(str, Enum):
@@ -12,12 +14,19 @@ class ShipmentStatus(str, Enum):
 
 
 class Seller(SQLModel, table=True):
-
-    id: int = Field(default=None, primary_key=True)
+    # Uses default_factory=uuid4 for id fields to avoid null issues.
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    # id: UUID = Field(sa_column=Column(postgresql.UUID, default=None, primary_key=True))
+    # id: int = Field(default=None, primary_key=True)
     name: str
 
     email: EmailStr
     password_hash: str
+
+    shipments: list["Shipment"] = Relationship(
+        back_populates="seller",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
 
 
 # Inherit SQLModel and set table = True
@@ -30,13 +39,29 @@ class Shipment(SQLModel, table=True):
         Primary key with default value will be
         assigned and incremented automatically
     """
-    id: int = Field(default=None, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    # id: UUID = Field(sa_column=Column(postgresql.UUID, default=None, primary_key=True))
+    # id: int = Field(default=None, primary_key=True)
 
     content: str
     weight: float = Field(le=25)
     destination: int
     status: ShipmentStatus
     estimated_delivery: datetime
+    seller_id: UUID = Field(foreign_key="seller.id")  # model name should be lowecase
+    # Many-to-one relationship with Seller model, linking each shipment to a seller
+    # back_populates links to the 'shipments' field in the Seller model
+    # sa_relationship_kwargs={"lazy": "selection"} optimizes SQLAlchemy query loading
+    seller: "Seller" = Relationship(
+        back_populates="shipments",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
+
+# shipment = Shipment()
+# session.get(Seller, shipment.seller_id)
+
+# seller Shipment(seller_id=seller.id)
 
 
 """

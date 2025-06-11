@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from ..db.async_engine_sqlmodel_postgres import SessionDep
-from ..db.sqlmodel_models import Shipment
+from ..db.sqlmodel_models import Seller, Shipment
 from ..schemas.s_schemas import (
     ShipmentCreate,
     ShipmentRead,
@@ -27,7 +27,7 @@ class ShipmentService:
         return await self.session.get(Shipment, id)
 
     # Add a new shipment
-    async def add(self, shipment_create: ShipmentCreate) -> Shipment:
+    async def add(self, shipment_create: ShipmentCreate, seller: Seller) -> Shipment:
 
         print("+" * 50)
         print(shipment_create.model_dump())
@@ -40,6 +40,7 @@ class ShipmentService:
             **data,
             status=ShipmentStatus.placed,
             estimated_delivery=datetime.now() + timedelta(days=3),
+            seller_id=seller.id
         )
         self.session.add(new_shipment)
         await self.session.commit()

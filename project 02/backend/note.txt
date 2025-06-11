@@ -200,3 +200,6 @@ then in shell you can test that you are connected to redis or not:
   
   >>> con.exists('key')
   1
+
+
+=========================

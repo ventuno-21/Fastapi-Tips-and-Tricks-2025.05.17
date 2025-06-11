@@ -66,7 +66,7 @@ async def submit_shipment(
     Instead of calling service.add(shipment) directly, it creates a new ShipmentService instance with ShipmentService(service).
     """
     # return await service.add(shipment)
-    return await ShipmentService(service).add(shipment)
+    return await ShipmentService(service).add(shipment, seller)
 
 
 @router.post("/v2/")
