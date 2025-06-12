@@ -19,7 +19,7 @@ class Seller(SQLModel, table=True):
     # id: UUID = Field(sa_column=Column(postgresql.UUID, default=None, primary_key=True))
     # id: int = Field(default=None, primary_key=True)
     name: str
-
+    address: str | None = None
     email: EmailStr
     password_hash: str
 

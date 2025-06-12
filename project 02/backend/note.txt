@@ -79,6 +79,8 @@ $ pip install alembic
 $ alembic init <folder that you want revisions to be saved> 
 $ alembic init migrations
 
+or for asyncrounous migrations will be :
+$ alembic init -t async migrations
 
 3) Define proect to Alempic
 ===>) inside alembic.ini change the datab of "sqlalchemy.url " to database that you are working with:
@@ -111,6 +113,67 @@ we should do below line:
 $ alembic upgrade head
 
 7) to revert to last migration:
+$ alembic downgrade -l
+
+=========================
+How to use ALEMBIC asyncrounously:
+1) Install it
+$ pip install alembic 
+
+2) initialize it:
+$ alembic init -t async <folder that you want revisions to be saved> 
+$ alembic init -t async migrations
+
+3) Define proect to env.py
+
+  import os  # noqa: F401
+  import sys  # noqa: F401
+
+  project_root = os.path.abspath(
+      os.path.join(os.path.dirname(__file__), "..", "..")
+  )  # noqa: F401
+  sys.path.insert(0, project_root)  # noqa: F401
+  from backend.db.sqlmodel_models import Seller, Shipment  # noqa: F401
+
+  from dotenv import load_dotenv
+
+
+  load_dotenv()
+
+  POSTGRES_SERVER = os.getenv("POSTGRES_SERVER")
+  POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+  POSTGRES_USER = os.getenv("POSTGRES_USER")
+  POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+  POSTGRES_DB = os.getenv("POSTGRES_DB")
+
+  POSTGRES_URL = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}/{POSTGRES_DB}"
+
+
+  config.set_main_option("sqlalchemy.url", POSTGRES_URL)
+
+  print("o" * 35)
+  print("METADATA TABLES:", list(SQLModel.metadata.tables.keys()))
+  print("o" * 35)
+  target_metadata = SQLModel.metadata
+
+4) Also we should be sure Alembic can find our models, therefore we should use "Base":
+inside env.py change the value of "target_metadata"
+
+$ from ..db.sqlmodel_models import Seller, Shipment
+
+$ target_metadata = SQLModel.metadata
+
+
+4) alembic revision --autogenerate -m "<Your changes comment it with detail>"
+
+
+x) Ussualy after autogenerate you should import sqlmodel so you dont face any problem:
+import sqlmodel
+
+5) then you should decide you want that datbase be aware of your migrations or not by below commands:
+please be noted nothing will not change if we dont use below commands
+
+$ alembic upgrade head
 $ alembic downgrade -l
 =========================
 Difference between SWAGGER & SCALAR
