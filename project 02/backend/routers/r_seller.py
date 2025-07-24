@@ -15,7 +15,7 @@ from ..operations.o_shipment import ShipmentService
 from ..routers.dependencies import SellerServiceDep
 from ..schemas.s_seller import SellerCreate, SellerRead
 from ..utils.token import decode_access_token
-from .dependencies import get_access_token, get_current_seller
+from .dependencies import _get_access_token, get_seller_access_token, get_current_seller
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/seller/token")
 
@@ -64,7 +64,7 @@ async def get_dashboard(
 ### Logout a seller
 @router.get("/logout")
 async def logout_seller(
-    token_data: Annotated[dict, Depends(get_access_token)],
+    token_data: Annotated[dict, Depends(get_seller_access_token)],
 ):
     await add_jti_to_blacklist(token_data["jti"])
     return {"detail": "Successfully logged out"}

@@ -1,4 +1,4 @@
-=============================
+=============================================================================================================================
 How to run this project:
 
   1)   uvicorn main:app --reload
@@ -6,7 +6,7 @@ How to run this project:
   2nd approch is:
 
   2) fastapi dev
-=========================
+=============================================================================================================================
 Annotated
 The FastAPI documentation recommends the use of Annotated for 
 defining route dependencies and parameters, rather than using 
@@ -34,7 +34,7 @@ Use instead:
     async def read_items(commons: Annotated[dict, Depends(common_parameters)]):
     return commons
 
-=========================
+=============================================================================================================================
 inside posgresql create a table with below code :
 
 DROP TABLE IF EXISTS todos;
@@ -65,12 +65,12 @@ CREATE TABLE todos (
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 
-=========================
+=============================================================================================================================
 Your link to connect postgresql should be like this:
 
 SQLALCHEMY_DATABASE_URL = "postgresql://<username in postgress datbase>:<password in postgress databse >@<domain name>/<your databse name that you created in postgres>"
 SQLALCHEMY_DATABASE_URL = "postgresql://user:password@127.0.0.1/Todo"
-=========================
+=============================================================================================================================
 How to use ALEMBIC:
 1) Install it
 $ pip install alembic 
@@ -115,7 +115,7 @@ $ alembic upgrade head
 7) to revert to last migration:
 $ alembic downgrade -l
 
-=========================
+=============================================================================================================================
 How to use ALEMBIC asyncrounously:
 1) Install it
 $ pip install alembic 
@@ -167,15 +167,18 @@ $ target_metadata = SQLModel.metadata
 4) alembic revision --autogenerate -m "<Your changes comment it with detail>"
 
 
-x) Ussualy after autogenerate you should import sqlmodel so you dont face any problem:
+x) Usually after autogenerate you should import sqlmodel so you dont face any problem:
 import sqlmodel
+
+xx) or instread of above commadn we can import sqlmodel inside below file name script.py.mako
+in this case authomatically sqlmodel wll be imported in each migration file
 
 5) then you should decide you want that datbase be aware of your migrations or not by below commands:
 please be noted nothing will not change if we dont use below commands
 
 $ alembic upgrade head
 $ alembic downgrade -l
-=========================
+=============================================================================================================================
 Difference between SWAGGER & SCALAR
 
 The Problem with Default Swagger Docs
@@ -211,10 +214,10 @@ How to use scalar?
             openapi_url=app.openapi_url,
             title=app.title,
         )
-=========================
+=============================================================================================================================
 how to orginie your imports in VScode:
 press  =>  shift +  alt  +  o
-=========================
+=============================================================================================================================
 
 ======> session.get()
  Retrieves a single ORM object by its primary key in a simple, direct way.
@@ -234,7 +237,7 @@ Flexible Queries: Supports select statements with .where(), .join(), .order_by()
 Result Handling: Returns a Result object, requiring methods like 
 .scalar(), .scalar_one_or_none(), or .scalars().all() to process results.
 
-=========================
+=============================================================================================================================
 how to connect to redis via windows:
 
 frist in WSL install redis:
@@ -265,4 +268,58 @@ then in shell you can test that you are connected to redis or not:
   1
 
 
-=========================
+=============================================================================================================================
+How to fix problem with authorization via two or more url Token:
+
+
+Customizes the Swagger UI to include OAuth2 security schemes (sellerAuth and partnerAuth) for seller and delivery partner authentication.
+Applies security to specific endpoints (e.g., /partner/update, /partner/logout).
+
+# 🧠 Inject custom Swagger security schemes
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    openapi_schema["components"]["securitySchemes"] = {
+        "sellerAuth": {
+            "type": "oauth2",
+            "flows": {"password": {"tokenUrl": "/seller/token", "scopes": {}}},
+        },
+        "partnerAuth": {
+            "type": "oauth2",
+            "flows": {"password": {"tokenUrl": "/partner/token", "scopes": {}}},
+        },
+    }
+    # if "/partner/update" in openapi_schema.get("paths", {}):
+    #     if "post" in openapi_schema["paths"]["/partner/update"]:
+    #         openapi_schema["paths"]["/partner/update"]["post"]["security"] = [
+    #             {"partnerAuth": []}
+    #         ]
+
+    # Optional: make endpoints require auth by default in Swagger
+    openapi_schema["security"] = [{"sellerAuth": []}, {"partnerAuth": []}]
+    openapi_schema["paths"]["/seller/dashboardv2"]["get"]["security"] = [
+        {"sellerAuth": []}
+    ]
+    openapi_schema["paths"]["/seller/logout"]["get"]["security"] = [{"sellerAuth": []}]
+    openapi_schema["paths"]["/partner/logout"]["get"]["security"] = [
+        {"partnerAuth": []}
+    ]
+    openapi_schema["paths"]["/partner/update"]["post"]["security"] = [
+        {"partnerAuth": []}
+    ]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+
+=============================================================================================================================

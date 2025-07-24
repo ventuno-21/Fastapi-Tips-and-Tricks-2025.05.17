@@ -15,10 +15,17 @@ from ..schemas.s_schemas import (
     ShipmentStatus,
     ShipmentUpdate,
 )
+from .o_delivery_partner import DeliveryPartnerService
 
 
 class ShipmentService:
-    def __init__(self, session: AsyncSession):
+    def __init__(
+        self,
+        session: AsyncSession,
+        partner_service: DeliveryPartnerService,
+    ):
+        super().__init__(Shipment, session)
+        self.partner_service = partner_service
         # Get database session to perform database operations
         self.session = session
 
@@ -42,6 +49,13 @@ class ShipmentService:
             estimated_delivery=datetime.now() + timedelta(days=3),
             seller_id=seller.id
         )
+        # Assign delivery partner to the shipment
+        partner = await self.partner_service.assign_shipment(
+            new_shipment,
+        )
+        # Add the delivery partner foreign key
+        new_shipment.delivery_partner_id = partner.id
+
         self.session.add(new_shipment)
         await self.session.commit()
         await self.session.refresh(new_shipment)

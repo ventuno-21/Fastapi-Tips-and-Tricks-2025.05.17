@@ -5,7 +5,7 @@ project_root = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )  # noqa: F401
 sys.path.insert(0, project_root)  # noqa: F401
-from backend.db.sqlmodel_models import Seller, Shipment  # noqa: F401
+from backend.db.sqlmodel_models import Seller, Shipment, DeliveryPartner  # noqa: F401
 
 import asyncio
 from logging.config import fileConfig
@@ -48,6 +48,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+# target_metadata = None
 
 print("o" * 35)
 print("METADATA TABLES:", list(SQLModel.metadata.tables.keys()))

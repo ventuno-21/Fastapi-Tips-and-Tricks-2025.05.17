@@ -1,11 +1,12 @@
 import os
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 from uuid import uuid4
+
 import jwt
 from dotenv import load_dotenv
-from fastapi import HTTPException, Depends
-from fastapi.security import HTTPBearer
-from typing import Annotated
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, OAuth2PasswordBearer
 
 # Load environment variables from .env file
 load_dotenv()
@@ -13,9 +14,13 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
 
+oauth2_scheme_seller = OAuth2PasswordBearer(tokenUrl="/seller/token")
+oauth2_scheme_partner = OAuth2PasswordBearer(tokenUrl="/partner/token")
+
+
 def generate_access_token(
     data: dict,
-    expiry: timedelta = timedelta(minutes=1),
+    expiry: timedelta = timedelta(minutes=90),
     # expiry: timedelta = timedelta(days=7),
 ) -> str:
     return jwt.encode(
