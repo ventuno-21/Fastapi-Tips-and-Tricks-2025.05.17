@@ -12,6 +12,7 @@ from ..db.sqlmodel_models import DeliveryPartner, Seller
 from ..operations.o_delivery_partner import DeliveryPartnerService
 from ..operations.o_seller import SellerService
 from ..operations.o_shipment import ShipmentService
+from ..operations.o_shipment_event import ShipmentEventService
 from ..operations.o_shipmentv2 import ShipmentService as ShipmentServiceV2
 from ..utils.token import (
     decode_access_token,
@@ -133,8 +134,7 @@ async def get_current_partner(
 # Shipment service dep
 def get_shipment_service(session: SessionDep):
     return ShipmentService(
-        session,
-        DeliveryPartnerService(session),
+        session, DeliveryPartnerService(session), ShipmentEventService(session)
     )
 
 
@@ -142,6 +142,7 @@ def get_shipment_service_v2(session: SessionDep):
     return ShipmentServiceV2(
         session,
         DeliveryPartnerService(session),
+        ShipmentEventService(session),
     )
 
 

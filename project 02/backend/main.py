@@ -13,7 +13,8 @@ from .db.async_engine_sqlmodel_postgres import create_db_tables
 from .routers.r_delivery_partner import router as delivery_prtner_router
 from .routers.r_seller import router as seller_router
 from .routers.r_shipment import router as shimpent_router
-from .routers.r_shipmentV2 import router as shimpentV2_router
+
+# from .routers.r_shipmentV2 import router as shimpentV2_router
 from .routers.r_shipmentV3 import router as shimpentV3_router
 from .routers.r_test import router as test_router
 from .utils.token import oauth2_scheme_partner, oauth2_scheme_seller
@@ -67,6 +68,18 @@ def custom_openapi():
     openapi_schema["paths"]["/seller/dashboardv2"]["get"]["security"] = [
         {"sellerAuth": []}
     ]
+    openapi_schema["paths"]["/shipmentv3/"]["get"]["security"] = [{"sellerAuth": []}]
+    openapi_schema["paths"]["/shipmentv3/v2/"]["get"]["security"] = [{"sellerAuth": []}]
+    openapi_schema["paths"]["/shipmentv3/cancel"]["get"]["security"] = [
+        {"sellerAuth": []}
+    ]
+    openapi_schema["paths"]["/shipmentv3/cancel/v2"]["get"]["security"] = [
+        {"sellerAuth": []}
+    ]
+    openapi_schema["paths"]["/shipmentv3/"]["post"]["security"] = [{"sellerAuth": []}]
+    openapi_schema["paths"]["/shipmentv3/v2/"]["post"]["security"] = [
+        {"sellerAuth": []}
+    ]
     openapi_schema["paths"]["/seller/logout"]["get"]["security"] = [{"sellerAuth": []}]
     openapi_schema["paths"]["/partner/logout"]["get"]["security"] = [
         {"partnerAuth": []}
@@ -101,8 +114,8 @@ def health_check():
 # app.include_router(shimpent_router, prefix="/shipment", tags=["shipment"])
 app.include_router(seller_router, prefix="/seller", tags=["seller"])
 app.include_router(delivery_prtner_router, prefix="/partner", tags=["Delivery Partner"])
-app.include_router(shimpentV3_router, prefix="/shipmentV3", tags=["shipment v3"])
-app.include_router(shimpentV2_router, prefix="/shipmentV2", tags=["shipment v2"])
+app.include_router(shimpentV3_router, prefix="/shipmentv3", tags=["shipment v3"])
+# app.include_router(shimpentV2_router, prefix="/shipmentV2", tags=["shipment v2"])
 app.include_router(test_router, prefix="/test", tags=["test"])
 
 

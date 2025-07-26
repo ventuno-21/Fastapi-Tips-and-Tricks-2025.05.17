@@ -1,6 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, Field
-from ..db.sqlmodel_models import ShipmentStatus
+from ..db.sqlmodel_models import ShipmentStatus, ShipmentEvent
+from uuid import UUID
 
 
 class BaseShipment(BaseModel):
@@ -14,7 +16,9 @@ class Example(BaseModel):
 
 
 class ShipmentRead(BaseShipment):
-    status: ShipmentStatus
+    id: UUID
+    estimated_delivery: datetime | None = Field(default=None)
+    timeline: list[ShipmentEvent]
 
 
 class ShipmentCreate(BaseShipment):
@@ -24,5 +28,7 @@ class ShipmentCreate(BaseShipment):
 class ShipmentUpdate(BaseModel):
     content: str | None = Field(default=None)
     weight: float | None = Field(default=None, le=25)
-    destination: int | None = Field(default=None)
+    location: int | None = Field(default=None)
+    description: str | None = Field(default=None)
     status: ShipmentStatus
+    estimated_delivery: datetime | None = Field(default=None)

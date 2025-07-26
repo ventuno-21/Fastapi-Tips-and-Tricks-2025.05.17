@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from ..db.async_engine_sqlmodel_postgres import SessionDep
-from ..db.sqlmodel_models import Seller, Shipment
+from ..db.sqlmodel_models import DeliveryPartner, Seller, Shipment
 from ..schemas.s_schemas import (
     ShipmentCreate,
     ShipmentRead,
@@ -18,6 +18,7 @@ from ..schemas.s_schemas import (
 )
 from .o_base import BaseService
 from .o_delivery_partner import DeliveryPartnerService
+from .o_shipment_event import ShipmentEventService
 
 
 class ShipmentService(BaseService):
@@ -25,9 +26,11 @@ class ShipmentService(BaseService):
         self,
         session: AsyncSession,
         partner_service: DeliveryPartnerService,
+        event_service: ShipmentEventService,
     ):
         super().__init__(Shipment, session)
         self.partner_service = partner_service
+        self.event_service = event_service
 
     # Get a shipment by id
     async def get(self, id: UUID) -> Shipment | None:
@@ -56,70 +59,62 @@ class ShipmentService(BaseService):
         # Add the delivery partner foreign key
         new_shipment.delivery_partner_id = partner.id
 
-        print("*" * 50)
-        print("new_shipment===============>   ", new_shipment)
-        print("partner ===============>   ", partner)
-        print("partner id===============>   ", partner.id)
-        print("*" * 50)
+        shipment = await self._add(new_shipment)
 
-        return await self._add(new_shipment)
+        event = await self.event_service.add(
+            shipment=shipment,
+            location=seller.zip_code,
+            status=ShipmentStatus.placed,
+            description=f"assigned to {partner.name}",
+        )
+
+        shipment.timeline.append(event)
+
+        return shipment
 
     # Update an existing shipment
-    async def update(self, shipment: Shipment) -> Shipment:
+    async def update(
+        self,
+        id: UUID,
+        shipment_update: ShipmentUpdate,
+        partner: DeliveryPartner,
+    ) -> Shipment:
+        shipment = await self.get(id)
+
+        if shipment.delivery_partner_id != partner.id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authorized (add: o_shipmentv2/update)",
+            )
+
+        update = shipment_update.model_dump(exclude_none=True)
+
+        if shipment_update.estimated_delivery:
+            shipment.estimated_delivery = shipment_update.estimated_delivery
+
+        if len(update) > 1 or not shipment_update.estimated_delivery:
+            await self.event_service.add(
+                shipment=shipment,
+                **update,
+            )
         return await self._update(shipment)
+
+    async def cancel(self, id: UUID, seller: Seller) -> Shipment:
+        shipment = await self.get(id)
+
+        if shipment.seller_id != seller.id:
+            raise HTTPException(
+                status=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authorized (add: o_shipmentv2/shipmentService/cancel)",
+            )
+        event = await self.event_service.add(
+            shipment=shipment, status=ShipmentStatus.cancelled
+        )
+
+        shipment.timeline.append(event)
+
+        return shipment
 
     # Delete a shipment
     async def delete(self, id: UUID) -> None:
         await self._delete(await self.get(id))
-
-
-# class ShipmentService:
-#     def __init__(
-#         self,
-#         session: AsyncSession,
-#         partner_service: DeliveryPartnerService,
-#     ):
-#         # Get database session to perform database operations
-#         self.session = session
-
-#     # Get a shipment by id
-#     async def get(self, id: int) -> Shipment:
-#         return await self.session.get(Shipment, id)
-
-#     # Add a new shipment
-#     async def add(self, shipment_create: ShipmentCreate, seller: Seller) -> Shipment:
-
-#         print("+" * 50)
-#         print(shipment_create.model_dump())
-
-#         data = shipment_create.model_dump()
-#         data.pop("status", None)  # remove if present
-#         data.pop("estimated_delivery", None)  # remove if present
-
-#         new_shipment = Shipment(
-#             **data,
-#             status=ShipmentStatus.placed,
-#             estimated_delivery=datetime.now() + timedelta(days=3),
-#             seller_id=seller.id,
-#         )
-#         self.session.add(new_shipment)
-#         await self.session.commit()
-#         await self.session.refresh(new_shipment)
-
-#         return new_shipment
-
-#     # Update an existing shipment
-#     async def update(self, id: int, shipment_update: dict) -> Shipment:
-#         shipment = await self.get(id)
-#         shipment.sqlmodel_update(shipment_update)
-
-#         self.session.add(shipment)
-#         await self.session.commit()
-#         await self.session.refresh(shipment)
-
-#         return shipment
-
-#     # Delete a shipment
-#     async def delete(self, id: int) -> None:
-#         await self.session.delete(await self.get(id))
-#         await self.session.commit()

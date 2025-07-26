@@ -65,7 +65,7 @@ class DeliveryPartnerService(UserService):
         # parters have reached max handling capacity
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail="No delivery partner available",
+            detail=f"No delivery partner available, This may cause because =>  first the delivery partner reached out its maximum capcity for specific zip_code/destination taht you provided, second, the zip_code/destination doesnt belong to any delivery partner ",
         )
 
     async def update(self, partner: DeliveryPartner):

@@ -323,3 +323,77 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 =============================================================================================================================
+What lazy="selectin" does
+This affects how related data (timeline events) is loaded when you query a Shipment. Here's the behavior:
+
+lazy="selectin" means:
+
+SQLAlchemy will issue a separate SELECT query to fetch the related ShipmentEvent records.
+
+BUT it’s optimized using a SELECT IN pattern — loading all relationships in one extra query for all shipments in the result set.
+
+It’s ideal for batch loading relationships, especially when dealing with lists or pagination.
+
+Compare that with other lazy strategies:
+
+Lazy Strategy	Behavior	Pros	Cons
+select	Loads related data in a new SELECT per parent row	Simple, predictable	Not efficient for bulk queries
+joined	Uses JOIN in the same query	Fewer round-trips	Can produce large result sets, messy with pagination
+subquery	Uses a subquery JOIN	Cleaner than joined	Still can be heavy
+selectin	One additional query using IN	Fast, efficient in bulk	Requires proper query setup
+dynamic	No automatic loading; allows .filter()	Flexible	Only usable with one-to-many, not lists in SQLModel
+🧪 Example in action
+Say you’re querying several Shipments:
+
+python
+shipments = session.exec(select(Shipment)).all()
+With lazy="selectin" on .timeline, SQLAlchemy will:
+
+Run one query to get all shipments.
+
+Immediately run one extra query to get all related timeline events using a WHERE shipment_id IN (...).
+
+Efficient and clean—and it avoids the N+1 problem (where each Shipment triggers its own timeline query).
+
+
+************* compare laziness in django and fastapi models:
+Django's Lazy Query Evaluation
+Django ORM doesn't actually run the query when you write:
+
+python
+shipments = Shipment.objects.filter(status='delivered')
+At this point, it just builds a queryset object. No SQL yet.
+
+It waits until you evaluate the queryset — e.g. with list(), len(), iteration, template rendering, etc.
+
+🔎 That’s why you can chain filters or annotate without triggering a DB hit until you're really ready:
+
+python
+shipments = Shipment.objects.filter(status='delivered').order_by('-created_at')[:5]
+🔁 Relationship Loading (ForeignKeys, ManyToMany)
+For related data, Django defaults to:
+
+Lazy loading via separate SELECT queries per access
+
+Similar to lazy="select" in SQLAlchemy
+
+Triggers an extra query only when you access the related object
+
+Example:
+
+python
+shipment = Shipment.objects.get(id=1)
+event = shipment.timeline.first()  # ← Extra query fired *now*
+⚡ How to load efficiently — like selectin
+To mimic SQLAlchemy’s selectin loading, Django offers select_related() and prefetch_related():
+
+Django Method	SQLAlchemy Equivalent	Best For
+select_related()	joined	ForeignKey, OneToOne
+prefetch_related()	selectin	ManyToMany, reverse FK
+So if you’re loading a batch of shipments and want their timelines without triggering N+1:
+
+python
+shipments = Shipment.objects.prefetch_related('timeline').all()
+One queryset for shipments, one optimized additional query for all related timeline events — just like selectin.
+
+=============================================================================================================================
