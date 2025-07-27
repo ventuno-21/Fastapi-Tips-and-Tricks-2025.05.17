@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
+from fastapi import BackgroundTasks, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -138,11 +138,11 @@ def get_shipment_service(session: SessionDep):
     )
 
 
-def get_shipment_service_v2(session: SessionDep):
+def get_shipment_service_v2(session: SessionDep, tasks: BackgroundTasks):
     return ShipmentServiceV2(
         session,
         DeliveryPartnerService(session),
-        ShipmentEventService(session),
+        ShipmentEventService(session, tasks),
     )
 
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from ..db.sqlmodel_models import ShipmentStatus, ShipmentEvent
 from uuid import UUID
 
@@ -22,7 +22,8 @@ class ShipmentRead(BaseShipment):
 
 
 class ShipmentCreate(BaseShipment):
-    pass
+    client_contact_email: EmailStr
+    client_contact_phonel: int | None = Field(default=None)
 
 
 class ShipmentUpdate(BaseModel):

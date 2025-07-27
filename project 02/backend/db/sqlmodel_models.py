@@ -140,6 +140,8 @@ class Shipment(SQLModel, table=True):
             default=datetime.now,
         )
     )
+    client_contact_email: EmailStr
+    client_contact_phone: int | None
     # status: ShipmentStatus
     timeline: list["ShipmentEvent"] = Relationship(
         back_populates="shipment",

@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, HTTPException, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Body, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -27,10 +27,12 @@ router = APIRouter()
 ##  a shipment by id
 @router.get("/", response_model=ShipmentRead)
 # async def get_shipment(id: int,  service: ServiceDep):
-async def get_shipment(id: UUID, seller: SellerDep, service: SessionDep):
+async def get_shipment(
+    id: UUID, seller: SellerDep, service: SessionDep, tasks: BackgroundTasks
+):
 
     partner_service = DeliveryPartnerService(session=service)
-    event_service = ShipmentEventService(session=service)
+    event_service = ShipmentEventService(session=service, tasks=tasks)
 
     shipment = await ShipmentService(
         service, partner_service=partner_service, event_service=event_service
@@ -83,6 +85,7 @@ async def submit_shipment(
     seller: SellerDep,
     shipment: ShipmentCreate,
     service: SessionDep,
+    tasks: BackgroundTasks,
 ):
     """
     why we dont use below sentence and we face an error:
@@ -94,9 +97,8 @@ async def submit_shipment(
     partner_service = DeliveryPartnerService(
         session=service
     )  # Instantiate DeliveryPartnerService
-    event_service = ShipmentEventService(
-        session=service
-    )  # Instantiate ShipmentEventService
+    event_service = ShipmentEventService(session=service, tasks=tasks)
+
     return await ShipmentService(
         service, partner_service=partner_service, event_service=event_service
     ).add(shipment, seller)
@@ -117,10 +119,13 @@ async def submit_shipmentv3(
 ### Update fields of a shipment
 @router.patch("/", response_model=ShipmentRead)
 async def update_shipment(
-    id: UUID, shipment_update: ShipmentUpdate, service: SessionDep
+    id: UUID,
+    shipment_update: ShipmentUpdate,
+    service: SessionDep,
+    tasks: BackgroundTasks,
 ):
     partner_service = DeliveryPartnerService(session=service)
-    event_service = ShipmentEventService(session=service)
+    event_service = ShipmentEventService(session=service, tasks=tasks)
 
     # Update data with given fields
     update = shipment_update.model_dump(exclude_none=True)

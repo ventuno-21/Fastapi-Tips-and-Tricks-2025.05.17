@@ -18,6 +18,30 @@ down_revision: Union[str, None] = "ddf5de1ffba1"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+"""
+Specifies the column’s data type as a PostgreSQL ENUM.
+Details:
+postgresql.ENUM: A SQLAlchemy type specific to PostgreSQL, 
+used to create or reference an ENUM type in the database. 
+An ENUM is a custom database type that restricts column values
+to a predefined set (e.g., placed, in_transit, out_for_delivery, 
+delivered from the ShipmentStatus Enum).
+name="shipmentstatus": The name of the ENUM type in the PostgreSQL
+database. This must match the name of an existing ENUM type or one
+that will be created during migration.
+create_type=False: Indicates that the ENUM type (shipmentstatus) 
+should not be automatically created in the database by SQLAlchemy. 
+This is typically set to False when using a migration tool like 
+Alembic, which handles the creation of the ENUM type explicitly 
+in the migration script. This avoids conflicts if the ENUM type 
+already exists or is managed separately.
+nullable=False:
+Specifies that the status column cannot be NULL in the database.
+This enforces that every row in the table must have a valid 
+ShipmentStatus value, aligning with the status: ShipmentStatus
+field in the SQLModel class, which is required (not optional).
+"""
+
 
 def upgrade() -> None:
     """Upgrade schema."""
@@ -27,29 +51,6 @@ def upgrade() -> None:
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("created_at", postgresql.TIMESTAMP(), nullable=True),
         sa.Column("location", sa.Integer(), nullable=False),
-    """
-    Specifies the column’s data type as a PostgreSQL ENUM.
-    Details:
-    postgresql.ENUM: A SQLAlchemy type specific to PostgreSQL, 
-    used to create or reference an ENUM type in the database. 
-    An ENUM is a custom database type that restricts column values
-    to a predefined set (e.g., placed, in_transit, out_for_delivery, 
-    delivered from the ShipmentStatus Enum).
-    name="shipmentstatus": The name of the ENUM type in the PostgreSQL
-    database. This must match the name of an existing ENUM type or one
-    that will be created during migration.
-    create_type=False: Indicates that the ENUM type (shipmentstatus) 
-    should not be automatically created in the database by SQLAlchemy. 
-    This is typically set to False when using a migration tool like 
-    Alembic, which handles the creation of the ENUM type explicitly 
-    in the migration script. This avoids conflicts if the ENUM type 
-    already exists or is managed separately.
-    nullable=False:
-    Specifies that the status column cannot be NULL in the database.
-    This enforces that every row in the table must have a valid 
-    ShipmentStatus value, aligning with the status: ShipmentStatus
-    field in the SQLModel class, which is required (not optional).
-    """
         sa.Column(
             "status",
             postgresql.ENUM(name="shipmentstatus", create_type=False),
