@@ -64,6 +64,7 @@ def custom_openapi():
     #         ]
 
     # Optional: make endpoints require auth by default in Swagger
+    # sellerAuth token url routes
     openapi_schema["security"] = [{"sellerAuth": []}, {"partnerAuth": []}]
     openapi_schema["paths"]["/seller/dashboardv2"]["get"]["security"] = [
         {"sellerAuth": []}
@@ -79,6 +80,12 @@ def custom_openapi():
     openapi_schema["paths"]["/shipmentv3/"]["post"]["security"] = [{"sellerAuth": []}]
     openapi_schema["paths"]["/shipmentv3/v2/"]["post"]["security"] = [
         {"sellerAuth": []}
+    ]
+
+    # partnerAuth token url routes
+    openapi_schema["paths"]["/shipmentv3/"]["patch"]["security"] = [{"partnerAuth": []}]
+    openapi_schema["paths"]["/shipmentv3/v2"]["patch"]["security"] = [
+        {"partnerAuth": []}
     ]
     openapi_schema["paths"]["/seller/logout"]["get"]["security"] = [{"sellerAuth": []}]
     openapi_schema["paths"]["/partner/logout"]["get"]["security"] = [

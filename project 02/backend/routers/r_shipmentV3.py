@@ -3,17 +3,33 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Body, HTTPException, Path, Query
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+)
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
+
+from ..utils.mail import TEMPLATE_DIR
 
 from ..db.async_engine_sqlmodel_postgres import SessionDep
 from ..db.sqlmodel_models import Shipment
 from ..operations.o_delivery_partner import DeliveryPartnerService
 from ..operations.o_shipment_event import ShipmentEventService
 from ..operations.o_shipmentv2 import ShipmentService
-from ..routers.dependencies import SellerDep, ServiceDepV2, ShipmentServiceDepV2
+from ..routers.dependencies import (
+    DeliveryPartnerDep,
+    SellerDep,
+    ServiceDepV2,
+    ShipmentServiceDepV2,
+)
 from ..schemas.s_schemas import (
     ShipmentCreate,
     ShipmentRead,
@@ -22,6 +38,29 @@ from ..schemas.s_schemas import (
 )
 
 router = APIRouter()
+
+
+templates = Jinja2Templates(TEMPLATE_DIR)
+
+
+### Tracking details of shipment
+@router.get("/track")
+async def get_tracking(request: Request, id: UUID, service: ShipmentServiceDepV2):
+    # Check for shipment with given id
+    shipment = await service.get(id)
+
+    context = shipment.model_dump()
+    context["status"] = shipment.status
+    context["partner"] = shipment.delivery_partner.name
+    context["timeline"] = shipment.timeline
+    # modifying the list in place, flipping the order
+    context["timeline"].reverse()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="email/track.html",
+        context=context,
+    )
 
 
 ##  a shipment by id
@@ -123,6 +162,7 @@ async def update_shipment(
     shipment_update: ShipmentUpdate,
     service: SessionDep,
     tasks: BackgroundTasks,
+    partner: DeliveryPartnerDep,
 ):
     partner_service = DeliveryPartnerService(session=service)
     event_service = ShipmentEventService(session=service, tasks=tasks)
@@ -138,7 +178,7 @@ async def update_shipment(
 
     shipment = await ShipmentService(
         service, partner_service=partner_service, event_service=event_service
-    ).update(id, update)
+    ).update(id, shipment_update, partner)
 
     return shipment
 
@@ -148,10 +188,13 @@ async def update_shipment(
 async def update_shipmentv2(
     id: UUID,
     shipment_update: ShipmentUpdate,
+    partner: DeliveryPartnerDep,
     service: ShipmentServiceDepV2,
 ):
     # Update data with  only given fields
     update = shipment_update.model_dump(exclude_none=True)
+    print(f"update type ============================ {type(update)}")
+    print(f"shipment_update type ============================ {type(shipment_update)}")
 
     if not update:
         raise HTTPException(
@@ -159,7 +202,7 @@ async def update_shipmentv2(
             detail="No data provided to update",
         )
 
-    shipment = await service.update(id, update)
+    shipment = await service.update(id, shipment_update, partner)
     # shipment = await ShipmentService(service).update(id, update)
 
     return shipment

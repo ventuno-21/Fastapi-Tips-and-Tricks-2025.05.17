@@ -77,20 +77,24 @@ class ShipmentEventService(BaseService):
             case ShipmentStatus.placed:
                 subject = "Your Order is Shipped 🚛"
                 context["seller"] = shipment.seller.name
+                context["id"] = shipment.id
                 context["partner"] = shipment.delivery_partner.name
                 template_name = "email/mail_placed.html"
 
             case ShipmentStatus.out_for_delivery:
                 subject = "Your Order is Arriving Soon 🛵"
+                context["id"] = shipment.id
                 template_name = "email/mail_out_for_delivery.html"
 
             case ShipmentStatus.delivered:
                 subject = "Your Order is Delivered ✅"
+                context["id"] = shipment.id
                 context["seller"] = shipment.seller.name
                 template_name = "email/mail_delivered.html"
 
             case ShipmentStatus.cancelled:
                 subject = "Your Order is Cancelled ❌"
+                context["id"] = shipment.id
                 template_name = "email/mail_cancelled.html"
 
         await self.notification_service.send_email_with_template(
