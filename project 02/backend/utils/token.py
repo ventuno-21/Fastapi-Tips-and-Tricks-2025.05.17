@@ -7,11 +7,15 @@ import jwt
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, OAuth2PasswordBearer
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 # Load environment variables from .env file
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
+
+
+_serializer = URLSafeTimedSerializer(secret_key=SECRET_KEY)
 
 
 oauth2_scheme_seller = OAuth2PasswordBearer(tokenUrl="/seller/token")
@@ -67,3 +71,17 @@ class AccessTokenBearer(HTTPBearer):
 access_token_bearer = AccessTokenBearer()
 
 another_way_to_access_token = Annotated[dict, Depends(access_token_bearer)]
+
+
+def generate_url_safe_token(data: dict) -> str:
+    return _serializer.dumps(data)
+
+
+def decode_url_safe_token(token: str, expiry: timedelta | None = None) -> dict | None:
+    try:
+        return _serializer.loads(
+            token,
+            max_age=expiry.total_seconds() if expiry else None,
+        )
+    except (BadSignature, SignatureExpired):
+        return None

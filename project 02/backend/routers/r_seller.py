@@ -41,6 +41,13 @@ async def login_seller(
     }
 
 
+### Verify Seller Email
+@router.get("/verify")
+async def verify_seller_email(token: str, service: SellerServiceDep):
+    await service.verify_email(token)
+    return {"detail": "Account verified"}
+
+
 @router.get("/dashboard")
 async def get_dashboard(
     session: SessionDep,

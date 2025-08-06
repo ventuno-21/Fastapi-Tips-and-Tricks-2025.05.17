@@ -18,9 +18,10 @@ password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class SellerService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, tasks):
         # Get database session to perform database operations
         self.session = session
+        super().__init__(Seller, session, tasks)
 
     async def add(self, credentials: SellerCreate) -> Seller:
         seller = Seller(

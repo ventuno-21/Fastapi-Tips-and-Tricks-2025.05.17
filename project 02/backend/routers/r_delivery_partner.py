@@ -43,6 +43,16 @@ async def login_delivery_partner(
     }
 
 
+### Verify Delivery Partner Email
+@router.get("/verify")
+async def verify_delivery_partner_email(
+    token: str,
+    service: DeliveryPartnerServiceDep,
+):
+    await service.verify_email(token)
+    return {"detail": "Account verified"}
+
+
 ### Update the logged in delivery partner
 # @router.post("/update", response_model=DeliveryPartnerRead)
 @router.post(

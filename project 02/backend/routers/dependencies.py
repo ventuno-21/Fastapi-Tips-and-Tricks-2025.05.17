@@ -10,7 +10,7 @@ from ..db.async_engine_sqlmodel_postgres import get_session
 from ..db.redis import is_jti_blacklisted
 from ..db.sqlmodel_models import DeliveryPartner, Seller
 from ..operations.o_delivery_partner import DeliveryPartnerService
-from ..operations.o_seller import SellerService
+from ..operations.o_sellerv2 import SellerService
 from ..operations.o_shipment import ShipmentService
 from ..operations.o_shipment_event import ShipmentEventService
 from ..operations.o_shipmentv2 import ShipmentService as ShipmentServiceV2
@@ -147,13 +147,13 @@ def get_shipment_service_v2(session: SessionDep, tasks: BackgroundTasks):
 
 
 # Seller service dep
-def get_seller_service(session: SessionDep):
-    return SellerService(session)
+def get_seller_service(session: SessionDep, tasks: BackgroundTasks):
+    return SellerService(session, tasks)
 
 
 # Delivery partner service dep
-def get_delivery_partner_service(session: SessionDep):
-    return DeliveryPartnerService(session)
+def get_delivery_partner_service(session: SessionDep, tasks: BackgroundTasks):
+    return DeliveryPartnerService(session, tasks)
 
 
 # Shipment service dep annotation

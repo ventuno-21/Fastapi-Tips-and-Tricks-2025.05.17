@@ -18,6 +18,7 @@ class ShipmentStatus(str, Enum):
 class User(SQLModel):
     name: str
     email: EmailStr
+    email_verified: bool | None = Field(default=False)
     """
     Field(exclude=True) → This tells Pydantic to ignore this field when 
     generating output with .dict(), .json(), or when sending data via an API.
