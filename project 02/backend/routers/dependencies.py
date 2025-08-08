@@ -141,7 +141,7 @@ def get_shipment_service(session: SessionDep):
 def get_shipment_service_v2(session: SessionDep, tasks: BackgroundTasks):
     return ShipmentServiceV2(
         session,
-        DeliveryPartnerService(session),
+        DeliveryPartnerService(session, tasks),
         ShipmentEventService(session, tasks),
     )
 

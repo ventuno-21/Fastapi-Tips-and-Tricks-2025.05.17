@@ -8,8 +8,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from ..utils.token import decode_url_safe_token
+
 from ..db.async_engine_sqlmodel_postgres import SessionDep
-from ..db.sqlmodel_models import DeliveryPartner, Seller, Shipment
+from ..db.sqlmodel_models import DeliveryPartner, Seller, Shipment, Review
 from ..schemas.s_schemas import (
     ShipmentCreate,
     ShipmentRead,
@@ -98,6 +100,26 @@ class ShipmentService(BaseService):
                 **update,
             )
         return await self._update(shipment)
+
+    async def rate(self, token: str, rating: int, comment: str):
+        token_data = decode_url_safe_token(token)
+
+        if not token_data:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authorized",
+            )
+
+        shipment = await self.get(UUID(token_data["id"]))
+
+        new_review = Review(
+            rating=rating,
+            comment=comment if comment else None,
+            shipment_id=shipment.id,
+        )
+
+        self.session.add(new_review)
+        await self.session.commit()
 
     async def cancel(self, id: UUID, seller: Seller) -> Shipment:
         shipment = await self.get(id)

@@ -1,12 +1,15 @@
+import os
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
+from dotenv import load_dotenv
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Body,
+    Form,
     HTTPException,
     Path,
     Query,
@@ -17,8 +20,6 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from ..utils.mail import TEMPLATE_DIR
-
 from ..db.async_engine_sqlmodel_postgres import SessionDep
 from ..db.sqlmodel_models import Shipment
 from ..operations.o_delivery_partner import DeliveryPartnerService
@@ -28,6 +29,7 @@ from ..routers.dependencies import (
     DeliveryPartnerDep,
     SellerDep,
     ServiceDepV2,
+    ShipmentServiceDep,
     ShipmentServiceDepV2,
 )
 from ..schemas.s_schemas import (
@@ -36,9 +38,13 @@ from ..schemas.s_schemas import (
     ShipmentStatus,
     ShipmentUpdate,
 )
+from ..utils.mail import TEMPLATE_DIR
+
 
 router = APIRouter()
 
+load_dotenv()
+APP_DOMAIN = os.getenv("APP_DOMAIN")
 
 templates = Jinja2Templates(TEMPLATE_DIR)
 
@@ -70,7 +76,7 @@ async def get_shipment(
     id: UUID, seller: SellerDep, service: SessionDep, tasks: BackgroundTasks
 ):
 
-    partner_service = DeliveryPartnerService(session=service)
+    partner_service = DeliveryPartnerService(session=service, tasks=tasks)
     event_service = ShipmentEventService(session=service, tasks=tasks)
 
     shipment = await ShipmentService(
@@ -134,7 +140,7 @@ async def submit_shipment(
     """
     # return await service.add(shipment)
     partner_service = DeliveryPartnerService(
-        session=service
+        session=service, tasks=tasks
     )  # Instantiate DeliveryPartnerService
     event_service = ShipmentEventService(session=service, tasks=tasks)
 
@@ -216,8 +222,8 @@ async def cancel_shipment(
     seller: SellerDep,
 ) -> Shipment:
 
-    partner_service = DeliveryPartnerService(session=service)
-    event_service = ShipmentEventService(session=service)
+    partner_service = DeliveryPartnerService(session=service, tasks=BackgroundTasks)
+    event_service = ShipmentEventService(session=service, tasks=BackgroundTasks)
 
     return await ShipmentService(
         service, partner_service=partner_service, event_service=event_service
@@ -253,3 +259,27 @@ async def cancel_shipmentv2(
 #     # await ShipmentService(service).delete(id)
 
 #     return {"detail": f"Shipment with id #{id} is deleted!"}
+
+
+### Sumbit a reivew for a shipment
+@router.get("/review")
+async def submit_review_page(request: Request, token: str):
+    return templates.TemplateResponse(
+        request=request,
+        name="review.html",
+        context={
+            "review_url": f"http://{APP_DOMAIN}/shipmentv3/review?token={token}",
+        },
+    )
+
+
+### Sumbit a reivew for a shipment
+@router.post("/review")
+async def submit_review(
+    token: str,
+    rating: Annotated[int, Form(ge=1, le=5)],
+    comment: Annotated[str | None, Form()],
+    service: ShipmentServiceDepV2,
+):
+    await service.rate(token, rating, comment)
+    return {"detail": "Review submitted"}

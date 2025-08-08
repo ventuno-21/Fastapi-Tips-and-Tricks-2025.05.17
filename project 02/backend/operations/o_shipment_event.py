@@ -1,6 +1,14 @@
+import os
+
+from dotenv import load_dotenv
+
 from ..db.sqlmodel_models import Shipment, ShipmentEvent, ShipmentStatus
+from ..utils.token import generate_url_safe_token
 from .o_base import BaseService
 from .o_notification import NotificationService
+
+load_dotenv()
+APP_DOMAIN = os.getenv("APP_DOMAIN")
 
 
 class ShipmentEventService(BaseService):
@@ -88,8 +96,12 @@ class ShipmentEventService(BaseService):
 
             case ShipmentStatus.delivered:
                 subject = "Your Order is Delivered ✅"
+                token = generate_url_safe_token({"id": str(shipment.id)})
                 context["id"] = shipment.id
                 context["seller"] = shipment.seller.name
+                context["review_url"] = (
+                    f"http://{APP_DOMAIN}/shipmentv3/review?token={token}"
+                )
                 template_name = "email/mail_delivered.html"
 
             case ShipmentStatus.cancelled:
