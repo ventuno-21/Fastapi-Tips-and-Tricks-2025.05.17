@@ -1,10 +1,13 @@
+import os
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
+from dotenv import load_dotenv
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Path, Query, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, Field
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
@@ -14,9 +17,12 @@ from ..db.sqlmodel_models import Seller, Shipment
 from ..operations.o_shipment import ShipmentService
 from ..routers.dependencies import SellerServiceDep
 from ..schemas.s_seller import SellerCreate, SellerRead
+from ..utils.mail import TEMPLATE_DIR
 from ..utils.token import decode_access_token
-from .dependencies import _get_access_token, get_seller_access_token, get_current_seller
+from .dependencies import _get_access_token, get_current_seller, get_seller_access_token
 
+load_dotenv()
+APP_DOMAIN = os.getenv("APP_DOMAIN")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/seller/token")
 
 router = APIRouter()
@@ -46,6 +52,49 @@ async def login_seller(
 async def verify_seller_email(token: str, service: SellerServiceDep):
     await service.verify_email(token)
     return {"detail": "Account verified"}
+
+
+### Email Password Reset Link
+@router.get("/forgot_password")
+async def forgot_password(email: EmailStr, service: SellerServiceDep):
+    await service.send_password_reset_link(email, router_prefix="/seller")
+    return {"detail": "Check email for password reset link"}
+
+
+### Password Reset Form
+@router.get("/reset_password_form")
+async def get_reset_password_form(request: Request, token: str):
+    router_prefix = "/seller"
+    templates = Jinja2Templates(TEMPLATE_DIR)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="password/reset_password_form.html",
+        context={
+            "reset_url": f"http://{APP_DOMAIN}{router_prefix}/reset_password?token={token}"
+        },
+    )
+
+
+### Reset Seller Password
+@router.post("/reset_password")
+async def reset_password(
+    request: Request,
+    token: str,
+    password: Annotated[str, Form()],
+    service: SellerServiceDep,
+):
+    is_success = await service.reset_password(token, password)
+
+    templates = Jinja2Templates(TEMPLATE_DIR)
+    return templates.TemplateResponse(
+        request=request,
+        name=(
+            "password/reset_password_success.html"
+            if is_success
+            else "password/reset_password_failed.html"
+        ),
+    )
 
 
 @router.get("/dashboard")
