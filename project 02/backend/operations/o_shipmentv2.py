@@ -11,7 +11,7 @@ from starlette import status
 from ..utils.token import decode_url_safe_token
 
 from ..db.async_engine_sqlmodel_postgres import SessionDep
-from ..db.sqlmodel_models import DeliveryPartner, Seller, Shipment, Review
+from ..db.sqlmodel_models import DeliveryPartner, Seller, Shipment, Review, TagName
 from ..schemas.s_schemas import (
     ShipmentCreate,
     ShipmentRead,
@@ -100,6 +100,22 @@ class ShipmentService(BaseService):
                 **update,
             )
         return await self._update(shipment)
+
+    async def add_tag(self, id: UUID, tag_name: TagName):
+        shipment = await self.get(id)
+        shipment.tags.append(await tag_name.tag(self.session))
+
+        return await self._update(shipment)
+
+    async def remove_tag(self, id: UUID, tag_name: TagName):
+        shipment = await self.get(id)
+        try:
+            shipment.tags.remove(await tag_name.tag(self.session))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tag diesnt exisit on shipment",
+            )
 
     async def rate(self, token: str, rating: int, comment: str):
         token_data = decode_url_safe_token(token)

@@ -39,6 +39,7 @@ from ..schemas.s_schemas import (
     ShipmentUpdate,
 )
 from ..utils.mail import TEMPLATE_DIR
+from ..db.sqlmodel_models import TagName
 
 
 router = APIRouter()
@@ -170,7 +171,7 @@ async def update_shipment(
     tasks: BackgroundTasks,
     partner: DeliveryPartnerDep,
 ):
-    partner_service = DeliveryPartnerService(session=service)
+    partner_service = DeliveryPartnerService(session=service, tasks=tasks)
     event_service = ShipmentEventService(session=service, tasks=tasks)
 
     # Update data with given fields
@@ -212,6 +213,36 @@ async def update_shipmentv2(
     # shipment = await ShipmentService(service).update(id, update)
 
     return shipment
+
+
+### Get all shipments with a tag
+@router.get("/tagged", response_model=list[ShipmentRead])
+async def get_shipments_with_specific_tag(
+    tag_name: TagName,
+    session: SessionDep,
+):
+    tag = await tag_name.tag(session)
+    return tag.shipments
+
+
+### Add a tag to a shipment
+@router.get("/tag", response_model=ShipmentRead)
+async def add_tag_to_shipment(
+    id: UUID,
+    tag_name: TagName,
+    service: ShipmentServiceDepV2,
+):
+    return await service.add_tag(id, tag_name)
+
+
+### Remove a tag from a shipment
+@router.delete("/tag", response_model=ShipmentRead)
+async def remove_tag_from_shipment(
+    id: UUID,
+    tag_name: TagName,
+    service: ShipmentServiceDepV2,
+):
+    return await service.remove_tag(id, tag_name)
 
 
 ### Cancel a shipment by id

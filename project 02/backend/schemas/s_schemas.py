@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, EmailStr, Field
-from ..db.sqlmodel_models import ShipmentStatus, ShipmentEvent
+from ..db.sqlmodel_models import ShipmentStatus, ShipmentEvent, Tag, TagName
 from uuid import UUID
 
 
@@ -19,6 +19,12 @@ class ShipmentRead(BaseShipment):
     id: UUID
     estimated_delivery: datetime | None = Field(default=None)
     timeline: list[ShipmentEvent]
+    tags: list[Tag]
+
+
+class TagRead(BaseModel):
+    name: TagName
+    instruction: str
 
 
 class ShipmentCreate(BaseShipment):

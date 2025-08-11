@@ -1,10 +1,51 @@
 from datetime import datetime
 from enum import Enum
-from sqlmodel import Field, SQLModel, Relationship, Column
+from uuid import UUID, uuid4
+
 from pydantic import EmailStr
-from uuid import uuid4, UUID
-from sqlalchemy.dialects import postgresql
 from sqlalchemy import ARRAY, INTEGER
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import Column, Field, Relationship, SQLModel, select
+
+
+# class Order(SQLModel, table=True):
+#     shipment_id: UUID = Field(foreign_key="shipment.id", primary_key=True)
+#     product_id: UUID = Field(foreign_key="product.id", primary_key=True)
+
+#     created_at: datetime
+#     quantity: int = Field(default=1)
+
+#     shipment: "Shipment" = Relationship(back_populates="orders")
+#     product: "Product" = Relationship(back_populates="orders")
+
+
+# class Product(SQLModel, table=True):
+#     id: UUID
+#     title: str
+#     description: str
+#     price: float
+#     weight: float
+
+#     orders: list["Order"] = Relationship(
+#         back_populates="products",
+#     )
+
+
+class TagName(str, Enum):
+    EXPRESS = "express"
+    STANDARD = "standard"
+    FRAGILE = "fragile"
+    HEAVY = "heavy"
+    INTERNATIONAL = "international"
+    DOMESTIC = "domestic"
+    TEMPERATURE_CONTROLLED = "temperature_controlled"
+    GIFT = "gift"
+    RETURN = "return"
+    DOCUMENTS = "documents"
+
+    async def tag(self, session: AsyncSession) -> "Tag":
+        return await session.scalar(select(Tag).where(Tag.name == self.value))
 
 
 class ShipmentStatus(str, Enum):
@@ -13,6 +54,40 @@ class ShipmentStatus(str, Enum):
     out_for_delivery = "out_for_delivery"
     delivered = "delivered"
     cancelled = "cancelled"
+
+
+### Through table
+class ShipmentTag(SQLModel, table=True):
+    __tablename__ = "shipment_tag"
+
+    shipment_id: UUID = Field(
+        foreign_key="shipment.id",
+        primary_key=True,
+    )
+    tag_id: UUID = Field(
+        foreign_key="tag.id",
+        primary_key=True,
+    )
+
+
+class Tag(SQLModel, table=True):
+    __tablename__ = "tag"
+
+    id: UUID = Field(
+        sa_column=Column(
+            postgresql.UUID,
+            default=uuid4,
+            primary_key=True,
+        )
+    )
+    name: TagName
+    instruction: str
+
+    shipments: list["Shipment"] = Relationship(
+        back_populates="tags",
+        link_model=ShipmentTag,
+        sa_relationship_kwargs={"lazy": "immediate"},
+    )
 
 
 class User(SQLModel):
@@ -167,6 +242,15 @@ class Shipment(SQLModel, table=True):
         back_populates="shipment",
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+
+    tags: list[Tag] = Relationship(
+        back_populates="shipments",
+        link_model=ShipmentTag,
+        sa_relationship_kwargs={"lazy": "immediate"},
+    )
+    # orders: list["Order"] = Relationship(
+    #     back_populates="shipments",
+    # )
 
     @property
     def status(self):
