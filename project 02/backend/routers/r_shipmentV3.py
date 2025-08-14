@@ -150,7 +150,7 @@ async def submit_shipment(
     ).add(shipment, seller)
 
 
-@router.post("/v2/")
+@router.post("/v2/", name="Add new **shipment**", description="Add new **shipment**")
 async def submit_shipmentv3(
     seller: SellerDep, shipment: ShipmentCreate, service: ShipmentServiceDepV2
 ) -> Shipment:

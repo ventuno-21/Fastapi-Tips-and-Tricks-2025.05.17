@@ -1,7 +1,9 @@
 # from routers.r_test import router as test_router
 from contextlib import asynccontextmanager
+from time import perf_counter
 
-from fastapi import Body, FastAPI
+from fastapi import Body, FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import OAuth2PasswordBearer
 from scalar_fastapi import get_scalar_api_reference
@@ -32,7 +34,35 @@ app = FastAPI(
     description="API for managing sellers, delivery partners, shipments, and more.",
     # Server start/stop listener
     lifespan=lifespan_handler,
+    docs_url="/",
+    redoc_url=None,
 )
+
+
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5500"])
+
+
+def add_log(log: str) -> None:
+    with open("file.log", "a") as file:
+        file.write(f"{log}\n")
+
+
+# Add custom middleware
+@app.middleware("http")
+async def custom_middleware(request: Request, call_next):
+    start = perf_counter()
+
+    response: Response = await call_next(request)
+
+    end = perf_counter()
+    time_taken = round(end - start, 2)
+
+    add_log(f"{request.method} {request.url} ({response.status_code}) {time_taken} s")
+    # add_log.delay(
+    #     f"{request.method} {request.url} ({response.status_code}) {time_taken} s"
+    # )
+
+    return response
 
 
 # 🧠 Inject custom Swagger security schemes
@@ -115,6 +145,11 @@ def get_scalar_docs():
 
 @app.get("/healthy")
 def health_check():
+    return {"status": "HEALTHY"}
+
+
+@app.get("/healthy2")
+async def health_check2():
     return {"status": "HEALTHY"}
 
 
