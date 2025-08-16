@@ -5,6 +5,7 @@ from time import perf_counter
 from fastapi import Body, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.routing import APIRoute
 from fastapi.security import OAuth2PasswordBearer
 from scalar_fastapi import get_scalar_api_reference
 from starlette import status
@@ -28,6 +29,13 @@ async def lifespan_handler(app: FastAPI):
     yield
 
 
+# Define a custom function to generate unique operation IDs for OpenAPI routes
+def custom_generate_unique_id_function(route: APIRoute) -> str:
+    # Use the route's name as its unique identifier
+    return route.name
+
+
+# Create a FastAPI application instance with custom metadata and documentation settings
 app = FastAPI(
     title="Ventuno API",
     version="1.0.0",
@@ -35,11 +43,21 @@ app = FastAPI(
     # Server start/stop listener
     lifespan=lifespan_handler,
     docs_url="/",
-    redoc_url=None,
+    redoc_url=None,  # Disable ReDoc documentation at /redoc
+    generate_unique_id_function=custom_generate_unique_id_function,  # Use custom function for OpenAPI operation IDs
 )
 
 
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5500"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5500",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def add_log(log: str) -> None:
@@ -136,10 +154,16 @@ app.openapi = custom_openapi
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+# Scalar API Documentation
+
+
+# Define a GET endpoint at /scalar  that is excluded from the OpenAPI schema
 @app.get("/scalar", include_in_schema=False)
 def get_scalar_docs():
+    # Return the Scalar API reference using the app's OpenAPI URL and a custom title
     return get_scalar_api_reference(
-        openapi_url=app.openapi_url, title="Scalar API 2222"
+        openapi_url=app.openapi_url,
+        title="Scalar API",
     )
 
 

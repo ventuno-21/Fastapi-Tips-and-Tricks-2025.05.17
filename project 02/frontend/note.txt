@@ -1,0 +1,48 @@
+Absolutely! It looks like you're referring to swagger-typescript-api, and you're trying to use it via the shorthand sta. While sta would be a convenient alias, it's not installed by default — and the CLI command is actually swagger-typescript-api.
+
+But if you want to use sta as a shortcut, here’s how you can set it up manually 👇
+
+🛠️ Step-by-Step: Install and Use swagger-typescript-api
+1. ✅ Install Globally
+You’ve already done this, but just to recap:
+
+bash
+npm install -g swagger-typescript-api
+This installs the CLI tool globally so you can use it from anywhere.
+
+2. 🚀 Use the Full Command
+To generate a TypeScript client from your OpenAPI spec:
+
+bash
+swagger-typescript-api generate -p http://127.0.0.1:8000/openapi.json -n client.ts --axios
+3. 🔁 Optional: Create a Shortcut Alias (sta)
+If you want to use sta as a shortcut, you can create a shell alias.
+
+On PowerShell (Windows):
+Add this to your PowerShell profile ($PROFILE):
+
+powershell
+Set-Alias sta swagger-typescript-api
+Then restart your terminal, and you can use:
+
+powershell
+sta generate -p http://127.0.0.1:8000/openapi.json -n client.ts --axios
+On bash/zsh (Linux/macOS):
+Add this to your .bashrc or .zshrc:
+
+bash
+alias sta="swagger-typescript-api"
+Then reload your shell:
+
+bash
+source ~/.bashrc  # or ~/.zshrc
+4. 📦 Local Install (Alternative)
+If you prefer not to install globally, you can install it locally in your project:
+
+bash
+npm install swagger-typescript-api --save-dev
+Then use it via npx:
+
+bash
+npx swagger-typescript-api generate -p http://127.0.0.1:8000/openapi.json -n client.ts --axios
+Let me know if you want to automate this in a script or integrate it into your frontend build process!
