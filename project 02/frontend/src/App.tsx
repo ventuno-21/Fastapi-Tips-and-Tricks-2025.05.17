@@ -14,14 +14,13 @@ function App() {
   const id = "237f2f79-8a94-4b1f-8fcb-92a4cec89280"
 
   const { isLoading, isError, error, data } = useQuery({
-    queryKey: [id], // Unique key for caching and identifying this query
+    queryKey: [id],
     queryFn: async () => {
-      // Function that fetches data from your API
-      const response = await api.shipmentv3.getShipment({ id });
-      return response.data; // Return the actual shipment data
+      const response = await api.shipmentv3.getShipment({ id })
+      return response.data
     },
-    retry: false, // Disable automatic retries if the query fails
-  });
+    retry: false,
+  })
 
   if (isError) {
     const apiError = error as AxiosError

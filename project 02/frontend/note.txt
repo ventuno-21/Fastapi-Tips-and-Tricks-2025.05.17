@@ -1,3 +1,5 @@
+====================== swagger-typescript-api
+
 Absolutely! It looks like you're referring to swagger-typescript-api, and you're trying to use it via the shorthand sta. While sta would be a convenient alias, it's not installed by default — and the CLI command is actually swagger-typescript-api.
 
 But if you want to use sta as a shortcut, here’s how you can set it up manually 👇
@@ -46,3 +48,821 @@ Then use it via npx:
 bash
 npx swagger-typescript-api generate -p http://127.0.0.1:8000/openapi.json -n client.ts --axios
 Let me know if you want to automate this in a script or integrate it into your frontend build process!
+
+==========================================================================
+
+@tanstack/react-query is a powerful data-fetching and caching library for React applications. It helps you manage server state—like fetching data from APIs, caching it, updating it, and syncing it with your UI—without writing tons of boilerplate code.
+
+🚀 What Is @tanstack/react-query?
+React Query (now under the TanStack umbrella) simplifies:
+
+Fetching data from APIs
+
+Caching and reusing data
+
+Background refetching
+
+Pagination and infinite scroll
+
+Optimistic updates
+
+Error handling and retries
+
+It’s perfect for apps that rely heavily on remote data.
+
+📦 Installation
+bash
+yarn add @tanstack/react-query
+Or with npm:
+
+bash
+npm install @tanstack/react-query
+🛠️ Basic Setup
+1. Wrap your app with QueryClientProvider
+tsx
+// main.tsx or index.tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </React.StrictMode>
+);
+2. Use useQuery to Fetch Data
+tsx
+// App.tsx
+import { useQuery } from "@tanstack/react-query";
+
+const fetchUsers = async () => {
+  const res = await fetch("https://jsonplaceholder.typicode.com/users");
+  if (!res.ok) throw new Error("Network response was not ok");
+  return res.json();
+};
+
+function App() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {(error as Error).message}</div>;
+
+  return (
+    <ul>
+      {data.map((user: any) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+export default App;
+🔁 Features You Get Automatically
+✅ Caching: Data is cached and reused across components.
+
+🔄 Refetching: Automatically refetches in the background.
+
+🧠 Smart Loading: No need to manage useEffect, useState, or loading flags manually.
+
+🧹 Garbage Collection: Unused queries are cleaned up.
+
+🔥 Devtools: Optional debugging tools.
+
+🧪 Bonus: Add Devtools
+bash
+yarn add @tanstack/react-query-devtools
+Then in your app:
+
+tsx
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+<QueryClientProvider client={queryClient}>
+  <App />
+  <ReactQueryDevtools initialIsOpen={false} />
+</QueryClientProvider>
+Would you like to see examples of mutations (e.g. POST/PUT requests), pagination, or infinite scrolling next?
+
+yes please
+Awesome, Yasna! Let’s dive into mutations, pagination, and infinite scrolling using @tanstack/react-query. These are super useful when you're building interactive apps that fetch and update data dynamically.
+
+🔄 1. Mutations (POST/PUT/DELETE)
+Mutations are used when you want to change data on the server—like submitting a form or deleting a record.
+
+🧪 Example: Create a new user
+tsx
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const createUser = async (newUser: { name: string }) => {
+  const res = await fetch("https://jsonplaceholder.typicode.com/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newUser),
+  });
+  return res.json();
+};
+
+function CreateUserForm() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      // Refetch users after creating one
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
+  const handleSubmit = () => {
+    mutation.mutate({ name: "New User" });
+  };
+
+  return (
+    <button onClick={handleSubmit}>
+      {mutation.isPending ? "Creating..." : "Create User"}
+    </button>
+  );
+}
+📄 2. Pagination
+Pagination helps you load data page by page, reducing load time and improving UX.
+
+🧪 Example: Fetch paginated posts
+tsx
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+
+const fetchPosts = async (page: number) => {
+  const res = await fetch(
+    `https://jsonplaceholder.typicode.com/posts?_limit=10&_page=${page}`
+  );
+  return res.json();
+};
+
+function PaginatedPosts() {
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["posts", page],
+    queryFn: () => fetchPosts(page),
+    keepPreviousData: true, // Keeps old data while loading new
+  });
+
+  return (
+    <div>
+      {isLoading ? <p>Loading...</p> : data.map((post: any) => <p key={post.id}>{post.title}</p>)}
+      <button onClick={() => setPage((p) => Math.max(p - 1, 1))}>Previous</button>
+      <button onClick={() => setPage((p) => p + 1)}>Next</button>
+    </div>
+  );
+}
+🔄 3. Infinite Scrolling
+Perfect for feeds or timelines where users scroll to load more.
+
+🧪 Example: Infinite scroll with useInfiniteQuery
+tsx
+import { useInfiniteQuery } from "@tanstack/react-query";
+
+const fetchPosts = async ({ pageParam = 1 }) => {
+  const res = await fetch(
+    `https://jsonplaceholder.typicode.com/posts?_limit=10&_page=${pageParam}`
+  );
+  return res.json();
+};
+
+function InfinitePosts() {
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["infinitePosts"],
+    queryFn: fetchPosts,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 10 ? allPages.length + 1 : undefined;
+    },
+  });
+
+  return (
+    <div>
+      {data?.pages.map((group, i) => (
+        <div key={i}>
+          {group.map((post: any) => (
+            <p key={post.id}>{post.title}</p>
+          ))}
+        </div>
+      ))}
+      <button
+        onClick={() => fetchNextPage()}
+        disabled={!hasNextPage || isFetchingNextPage}
+      >
+        {isFetchingNextPage ? "Loading more..." : hasNextPage ? "Load More" : "No more posts"}
+      </button>
+    </div>
+  );
+}
+Would you like to explore optimistic updates, error handling, or query caching strategies next? Or maybe integrate this with your FastAPI backend?
+
+yes
+Perfect, Yasna! Let’s explore optimistic updates, error handling, and query caching strategies—these are advanced features that make your app feel fast and resilient. Then we’ll look at how to integrate this with a FastAPI backend.
+
+⚡ 1. Optimistic Updates
+Optimistic updates let you instantly update the UI before the server confirms the change—great for snappy user experiences.
+
+🧪 Example: Like a post instantly
+tsx
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const likePost = async (postId: number) => {
+  await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+};
+
+function LikeButton({ postId }: { postId: number }) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () => likePost(postId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+
+      const previousPosts = queryClient.getQueryData(["posts"]);
+
+      queryClient.setQueryData(["posts"], (old: any) =>
+        old.map((post: any) =>
+          post.id === postId ? { ...post, likes: post.likes + 1 } : post
+        )
+      );
+
+      return { previousPosts };
+    },
+    onError: (_err, _variables, context) => {
+      queryClient.setQueryData(["posts"], context?.previousPosts);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+    },
+  });
+
+  return <button onClick={() => mutation.mutate()}>Like</button>;
+}
+🛡️ 2. Error Handling
+React Query makes error handling easy with onError, error state, and retry logic.
+
+🧪 Example: Retry failed fetch
+tsx
+const { data, error, isError } = useQuery({
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  retry: 3, // Retry up to 3 times
+  onError: (err) => {
+    console.error("Failed to fetch users:", err);
+  },
+});
+You can also show fallback UI:
+
+tsx
+if (isError) return <div>Error: {(error as Error).message}</div>;
+🧠 3. Caching Strategies
+React Query caches data by default. You can control how long it stays fresh:
+
+tsx
+useQuery({
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  cacheTime: 1000 * 60 * 10, // 10 minutes
+});
+staleTime: How long data is considered fresh (no refetch).
+
+cacheTime: How long unused data stays in memory.
+
+🧩 Integrating with FastAPI
+Let’s say your FastAPI backend has an endpoint:
+
+python
+@app.get("/api/users")
+def get_users():
+    return [{"id": 1, "name": "Yasna"}, {"id": 2, "name": "Alex"}]
+🧪 React Query fetch:
+tsx
+const fetchUsers = async () => {
+  const res = await fetch("http://localhost:8000/api/users");
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+};
+
+const { data } = useQuery({
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+});
+Make sure to handle CORS in FastAPI:
+
+python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+Would you like help setting up authentication, WebSocket subscriptions, or background syncing with FastAPI next?
+
+yes
+Fantastic, Yasna! Let’s level up your FastAPI + React Query integration by exploring:
+
+🔐 Authentication (JWT-based)
+
+🔔 WebSocket subscriptions (for real-time updates)
+
+🔄 Background syncing (auto-refreshing data)
+
+🔐 1. Authentication with JWT
+🧩 FastAPI Backend
+python
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+SECRET_KEY = "your-secret"
+ALGORITHM = "HS256"
+
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/protected")
+def protected_route(user=Depends(verify_token)):
+    return {"message": f"Hello {user['sub']}"}
+🧪 React Query + Fetch with Token
+tsx
+const fetchProtected = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch("http://localhost:8000/api/protected", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Unauthorized");
+  return res.json();
+};
+
+const { data, error } = useQuery({
+  queryKey: ["protected"],
+  queryFn: fetchProtected,
+});
+🔔 2. WebSocket Subscriptions
+Use WebSockets for real-time updates (e.g. chat, notifications).
+
+🧩 FastAPI WebSocket
+python
+from fastapi import WebSocket
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        await websocket.send_text("Ping from server")
+🧪 React WebSocket Client
+tsx
+import { useEffect, useState } from "react";
+
+function WebSocketComponent() {
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:8000/ws");
+    socket.onmessage = (event) => setMessage(event.data);
+    return () => socket.close();
+  }, []);
+
+  return <div>Server says: {message}</div>;
+}
+You can combine this with React Query to refetch data when a WebSocket event arrives.
+
+🔄 3. Background Syncing
+React Query can auto-refetch data at intervals:
+
+tsx
+useQuery({
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  refetchInterval: 10000, // every 10 seconds
+});
+Or refetch when the window regains focus:
+
+tsx
+useQuery({
+  queryKey: ["users"],
+  queryFn: fetchUsers,
+  refetchOnWindowFocus: true,
+});
+🧠 Pro Tip: Combine All Three
+Imagine a dashboard that:
+
+Authenticates users via JWT
+
+Uses WebSockets to notify of changes
+
+Auto-syncs data with React Query
+
+You’ll get a fast, secure, and reactive frontend backed by a robust FastAPI backend.
+
+Would you like help building a full-stack example with login, protected routes, and live updates? Or maybe deploy it to Vercel + Render or Docker?
+
+yes
+Amazing, Yasna! Let’s build a full-stack FastAPI + React app with:
+
+🔐 JWT login and protected routes
+
+⚛️ React Query for data fetching
+
+🔔 WebSocket for live updates
+
+🚀 Deployment options (Vercel + Render or Docker)
+
+🧩 1. FastAPI Backend: Auth + Protected API
+✅ Install dependencies
+bash
+pip install fastapi uvicorn python-jose[cryptography] passlib
+🔐 main.py
+python
+from fastapi import FastAPI, Depends, HTTPException, WebSocket
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Auth setup
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+fake_user_db = {
+    "yasna": {
+        "username": "yasna",
+        "hashed_password": pwd_context.hash("password123"),
+    }
+}
+
+def authenticate_user(username, password):
+    user = fake_user_db.get(username)
+    if not user or not pwd_context.verify(password, user["hashed_password"]):
+        return False
+    return user
+
+def create_token(data: dict):
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_token({"sub": user["username"]})
+    return {"access_token": token, "token_type": "bearer"}
+
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/data")
+def get_data(user=Depends(verify_token)):
+    return {"message": f"Hello {user['sub']}, here’s your data!"}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        await websocket.send_text("🔔 New update from server")
+⚛️ 2. React Frontend: Login + Protected Fetch
+✅ Install packages
+bash
+yarn add @tanstack/react-query
+🔐 Login Component
+tsx
+function Login() {
+  const [username, setUsername] = useState("yasna");
+  const [password, setPassword] = useState("password123");
+
+  const handleLogin = async () => {
+    const res = await fetch("http://localhost:8000/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username, password }),
+    });
+    const data = await res.json();
+    localStorage.setItem("token", data.access_token);
+  };
+
+  return (
+    <div>
+      <input value={username} onChange={(e) => setUsername(e.target.value)} />
+      <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
+      <button onClick={handleLogin}>Login</button>
+    </div>
+  );
+}
+🔒 Protected Data Fetch
+tsx
+function ProtectedData() {
+  const fetchData = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:8000/api/data", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  };
+
+  const { data, isLoading } = useQuery({ queryKey: ["secure"], queryFn: fetchData });
+
+  return <div>{isLoading ? "Loading..." : data.message}</div>;
+}
+🔔 3. WebSocket Live Updates
+tsx
+function LiveUpdates() {
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:8000/ws");
+    socket.onmessage = (e) => setMsg(e.data);
+    return () => socket.close();
+  }, []);
+
+  return <div>{msg}</div>;
+}
+🚀 4. Deployment Options
+🧭 Option A: Vercel (Frontend) + Render (Backend)
+Deploy React app to Vercel
+
+Deploy FastAPI to Render
+
+Set CORS allow_origins to your Vercel domain
+
+🐳 Option B: Docker Full Stack
+Dockerfile (FastAPI):
+
+Dockerfile
+FROM python:3.11
+WORKDIR /app
+COPY . .
+RUN pip install fastapi uvicorn python-jose[cryptography] passlib
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+Docker Compose:
+
+yaml
+version: "3"
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+Would you like me to generate the full project structure with files and folders next? Or help you deploy it step-by-step?
+
+1github.com
+yes
+Awesome, Yasna! Let’s build out the full project structure for your FastAPI + React app with JWT auth, protected routes, WebSocket updates, and React Query. I’ll lay out the folder structure, key files, and content so you can get started quickly.
+
+🏗️ Project Structure
+Codice
+fastapi-react-app/
+├── backend/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── components/
+│   │   │   ├── Login.tsx
+│   │   │   ├── ProtectedData.tsx
+│   │   │   └── LiveUpdates.tsx
+│   ├── package.json
+│   └── Dockerfile
+└── docker-compose.yml
+🐍 backend/main.py
+python
+# Full FastAPI backend with JWT and WebSocket
+from fastapi import FastAPI, Depends, HTTPException, WebSocket
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+fake_user_db = {
+    "yasna": {
+        "username": "yasna",
+        "hashed_password": pwd_context.hash("password123"),
+    }
+}
+
+def authenticate_user(username, password):
+    user = fake_user_db.get(username)
+    if not user or not pwd_context.verify(password, user["hashed_password"]):
+        return False
+    return user
+
+def create_token(data: dict):
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_token({"sub": user["username"]})
+    return {"access_token": token, "token_type": "bearer"}
+
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/data")
+def get_data(user=Depends(verify_token)):
+    return {"message": f"Hello {user['sub']}, here’s your data!"}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        await websocket.send_text("🔔 New update from server")
+📦 backend/requirements.txt
+Codice
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib
+🐳 backend/Dockerfile
+Dockerfile
+FROM python:3.11
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+⚛️ frontend/src/main.tsx
+tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </React.StrictMode>
+);
+⚛️ frontend/src/App.tsx
+tsx
+import Login from "./components/Login";
+import ProtectedData from "./components/ProtectedData";
+import LiveUpdates from "./components/LiveUpdates";
+
+function App() {
+  return (
+    <div>
+      <h1>FastAPI + React Query App</h1>
+      <Login />
+      <ProtectedData />
+      <LiveUpdates />
+    </div>
+  );
+}
+
+export default App;
+🔐 frontend/src/components/Login.tsx
+tsx
+import { useState } from "react";
+
+export default function Login() {
+  const [username, setUsername] = useState("yasna");
+  const [password, setPassword] = useState("password123");
+
+  const handleLogin = async () => {
+    const res = await fetch("http://localhost:8000/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username, password }),
+    });
+    const data = await res.json();
+    localStorage.setItem("token", data.access_token);
+  };
+
+  return (
+    <div>
+      <input value={username} onChange={(e) => setUsername(e.target.value)} />
+      <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
+      <button onClick={handleLogin}>Login</button>
+    </div>
+  );
+}
+🔒 frontend/src/components/ProtectedData.tsx
+tsx
+import { useQuery } from "@tanstack/react-query";
+
+export default function ProtectedData() {
+  const fetchData = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:8000/api/data", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  };
+
+  const { data, isLoading } = useQuery({ queryKey: ["secure"], queryFn: fetchData });
+
+  return <div>{isLoading ? "Loading..." : data.message}</div>;
+}
+🔔 frontend/src/components/LiveUpdates.tsx
+tsx
+import { useEffect, useState } from "react";
+
+export default function LiveUpdates() {
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:8000/ws");
+    socket.onmessage = (e) => setMsg(e.data);
+    return () => socket.close();
+  }, []);
+
+  return <div>{msg}</div>;
+}
+🐳 frontend/Dockerfile
+Dockerfile
+FROM node:18
+WORKDIR /app
+COPY . .
+RUN yarn install
+RUN yarn build
+EXPOSE 3000
+CMD ["yarn", "start"]
+🐳 docker-compose.yml
+yaml
+version: "3"
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+      
+=================================================================================
